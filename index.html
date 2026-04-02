@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meal Planner">
+<title>Family Meal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --surface2: #f4f3ef;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1a1a18;
+    --text2: #6b6b65;
+    --text3: #9f9f98;
+    --green: #2d7a4f;
+    --green-bg: #eef7f1;
+    --green-light: #d4eddc;
+    --amber: #b45309;
+    --amber-bg: #fef3c7;
+    --blue: #1d4ed8;
+    --blue-bg: #eff6ff;
+    --purple: #6d28d9;
+    --purple-bg: #f5f3ff;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --font: 'DM Sans', sans-serif;
+    --font-display: 'DM Serif Display', serif;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --surface2: #252523;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0efe9;
+      --text2: #9f9f98;
+      --text3: #6b6b65;
+      --green: #4ade80;
+      --green-bg: #0f2d1a;
+      --green-light: #1a4228;
+      --amber: #fbbf24;
+      --amber-bg: #1f1200;
+      --blue: #60a5fa;
+      --blue-bg: #0c1a3a;
+      --purple: #a78bfa;
+      --purple-bg: #1a0f38;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); font-family: var(--font); color: var(--text); overscroll-behavior: none; }
+  body { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; height: 100vh; height: 100dvh; }
+
+  /* APP SHELL */
+  .app-header {
+    padding: calc(var(--safe-top) + 14px) 18px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .app-header h1 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+  .tab-row {
+    display: flex;
+    gap: 0;
+    border-bottom: none;
+  }
+  .tb {
+    flex: 1;
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text3);
+    border: none;
+    background: transparent;
+    border-bottom: 2.5px solid transparent;
+    font-family: var(--font);
+    transition: color .15s, border-color .15s;
+  }
+  .tb.on { color: var(--text); border-bottom-color: var(--text); }
+
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 16px 20px;
+  }
+  .nav-bar {
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    padding: 8px 0 calc(8px + var(--safe-bottom));
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 0;
+    background: none;
+    border: none;
+    font-family: var(--font);
+  }
+  .nav-lbl { font-size: 10px; color: var(--text3); font-weight: 500; transition: color .15s; }
+  .nav-item.on .nav-lbl { color: var(--text); }
+  .nav-ic { width: 22px; height: 22px; }
+  .nav-ic path, .nav-ic circle, .nav-ic polyline, .nav-ic rect {
+    stroke: var(--text3); fill: none; stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke .15s;
+  }
+  .nav-item.on .nav-ic path,
+  .nav-item.on .nav-ic circle,
+  .nav-item.on .nav-ic polyline { stroke: var(--text); }
+
+  /* VIEW SYSTEM */
+  .view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .view.active { display: flex; }
+
+  /* BACK BAR */
+  .back-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .back-bar:active { background: var(--surface2); }
+  .back-lbl { font-size: 15px; color: var(--text2); }
+
+  /* DAY CARDS */
+  .day-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .dc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 15px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .dc-head:active { background: var(--surface2); }
+  .dc-day { font-size: 15px; font-weight: 500; color: var(--text); }
+  .dc-sub { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+  .chev { width: 18px; height: 18px; transition: transform .2s; flex-shrink: 0; }
+  .chev path { stroke: var(--text3); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .dc-body { display: none; border-top: 1px solid var(--border); }
+  .dc-body.open { display: block; }
+  .meal-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .meal-row:last-child { border-bottom: none; }
+  .meal-row:active { background: var(--surface2); }
+  .meal-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .dot-b { background: var(--amber); }
+  .dot-l { background: var(--blue); }
+  .dot-d { background: var(--purple); }
+  .meal-info { flex: 1 }
+  .meal-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 500; margin-bottom: 2px; }
+  .meal-name { font-size: 14px; color: var(--text); line-height: 1.35; }
+  .meal-arr { font-size: 18px; color: var(--text3); line-height: 1; }
+
+  /* RECIPE VIEW */
+  .rv-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-bottom: 10px;
+  }
+  .rv-title { font-family: var(--font-display); font-size: 26px; font-weight: 400; color: var(--text); margin-bottom: 6px; line-height: 1.2; letter-spacing: -0.3px; }
+  .rv-desc { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
+  .rv-meta { display: flex; gap: 16px; margin-bottom: 20px; }
+  .rv-meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text2);
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+  }
+  .sec-head { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); margin-bottom: 10px; margin-top: 20px; }
+  .ing-list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .ing-row { display: flex; justify-content: space-between; align-items: baseline; padding: 9px 13px; border-bottom: 1px solid var(--border); }
+  .ing-row:last-child { border-bottom: none; }
+  .ing-name { font-size: 14px; color: var(--text); }
+  .ing-qty { font-size: 13px; color: var(--text2); }
+  .step-item { display: flex; gap: 12px; margin-bottom: 14px; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: var(--text2);
+  }
+  .step-text { font-size: 14px; color: var(--text); line-height: 1.55; padding-top: 4px; flex: 1; }
+  .tip-box { background: var(--green-bg); border: 1px solid var(--green-light); border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 6px; }
+  .tip-box p { font-size: 13px; color: var(--green); line-height: 1.55; }
+
+  /* SHOPPING */
+  .shop-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .prog-wrap { flex: 1; }
+  .prog-track { height: 7px; background: var(--surface2); border-radius: 999px; overflow: hidden; margin-bottom: 5px; }
+  .prog-fill { height: 100%; background: var(--green); border-radius: 999px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+  .prog-txt { font-size: 12px; color: var(--text2); }
+  .rst-btn {
+    font-size: 12px; padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--text2);
+    cursor: pointer; font-family: var(--font);
+    white-space: nowrap;
+  }
+  .rst-btn:active { background: var(--surface2); }
+  .filters { display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 16px; padding-bottom: 2px; scrollbar-width: none; }
+  .filters::-webkit-scrollbar { display: none; }
+  .flt {
+    font-size: 12px; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--text2);
+    cursor: pointer; font-family: var(--font);
+    white-space: nowrap; transition: all .15s; flex-shrink: 0;
+  }
+  .flt.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .cat-hd { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); padding: 10px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+  .si {
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 10px 4px; border-radius: var(--radius-sm);
+    cursor: pointer; transition: background .1s;
+  }
+  .si:active { background: var(--surface2); }
+  .si.done { opacity: .38; }
+  .si-check {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 1.5px solid var(--border2); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px; transition: all .15s;
+    background: transparent;
+  }
+  .si.done .si-check { background: var(--green); border-color: var(--green); }
+  .si-tick { display: none; width: 13px; height: 13px; }
+  .si.done .si-tick { display: block; }
+  .si-info { flex: 1; }
+  .si-name { font-size: 14px; color: var(--text); line-height: 1.3; }
+  .si.done .si-name { text-decoration: line-through; color: var(--text3); }
+  .si-qty { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .si-use { font-size: 11px; color: var(--text3); font-style: italic; margin-top: 2px; line-height: 1.3; }
+
+  .spacer { height: 24px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1 id="hdr-title">This week</h1>
+  <div class="tab-row">
+    <button class="tb on" id="tb-menu" onclick="switchTab('menu')">Menu</button>
+    <button class="tb" id="tb-shop" onclick="switchTab('shop')">Shopping</button>
+  </div>
+</div>
+
+<!-- MAIN VIEW -->
+<div class="view active" id="view-main" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+  <div class="scroll-area">
+    <div id="pane-menu"></div>
+    <div id="pane-shop" style="display:none"></div>
+  </div>
+</div>
+
+<!-- RECIPE VIEW -->
+<div class="view" id="view-recipe" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+  <div class="back-bar" onclick="closeRecipe()">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M11 4L6 9l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="back-lbl" id="rv-back-lbl">Back</span>
+  </div>
+  <div class="scroll-area">
+    <div id="rv-content"></div>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nav-item on" id="nav-home" onclick="navTo('menu')">
+    <svg class="nav-ic" viewBox="0 0 22 22">
+      <path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V9.5z"/>
+    </svg>
+    <span class="nav-lbl">Menu</span>
+  </button>
+  <button class="nav-item" id="nav-shop" onclick="navTo('shop')">
+    <svg class="nav-ic" viewBox="0 0 22 22">
+      <circle cx="9" cy="19" r="1"/><circle cx="17" cy="19" r="1"/>
+      <path d="M1 1h3l2 10h12l2-7H6"/>
+    </svg>
+    <span class="nav-lbl">Shopping</span>
+  </button>
+</div>
+
+<script>
+const RECIPES = {
+  "Scrambled eggs & toast":{tag:"Breakfast · 10 min",time:"10 min",serves:"4",desc:"Creamy low-and-slow scrambled eggs on crispy toast. Simple, filling and ready in minutes.",ing:[["Eggs","6"],["Whole milk","4 tbsp"],["Butter","1 tbsp"],["Bread slices","4"],["Salt & pepper","to taste"]],steps:["Crack eggs into a bowl, add milk, salt and pepper. Whisk until fully combined.","Melt butter in a pan over low heat. Pour in egg mixture.","Stir gently with a spatula, folding slowly for 2–3 min. Remove from heat while slightly underdone — they finish cooking off the heat.","Toast bread. Serve eggs immediately on toast."],tip:"Never rush scrambled eggs on high heat — low and slow is the secret to creamy texture."},
+  "Tomato soup + bread":{tag:"Lunch · 20 min",time:"20 min",serves:"4",desc:"Simple warming tomato soup, perfect for dipping crusty bread.",ing:[["Crushed tomatoes (canned)","1 can"],["Onion","1"],["Garlic cloves","2"],["Chicken stock","400 ml"],["Olive oil","1 tbsp"],["Salt & pepper","to taste"],["Bread","to serve"]],steps:["Dice onion and mince garlic. Sauté in olive oil over medium heat for 5 min.","Add canned tomatoes and stock. Simmer 10 min.","Blend smooth with a stick blender. Season to taste.","Serve hot with crusty bread for dipping."],tip:"Add a pinch of sugar to balance acidity if the tomatoes are sharp."},
+  "Chicken & veg stir-fry + rice":{tag:"Dinner · 25 min",time:"25 min",serves:"4",desc:"Quick high-heat stir-fry with tender chicken and crisp vegetables over fluffy rice.",ing:[["Chicken breast","500 g"],["Bell peppers","2"],["Broccoli florets","200 g"],["Carrots","2"],["Soy sauce","3 tbsp"],["Garlic cloves","3"],["Vegetable oil","2 tbsp"],["Corn starch","1 tbsp"],["White rice","300 g"]],steps:["Rinse rice and cook with 2:1 water ratio (~20 min). Keep warm.","Slice chicken into thin strips. Toss with corn starch and 1 tbsp soy sauce.","Heat oil in a wok on high heat. Stir-fry chicken until golden (~5 min).","Add minced garlic, then peppers, broccoli, carrots. Toss on high heat. Add remaining soy sauce. Cook 3–4 min.","Serve over rice."],tip:"Prep all veg before turning the heat on — stir-fry moves fast."},
+  "Oatmeal with banana & honey":{tag:"Breakfast · 10 min",time:"10 min",serves:"4",desc:"Warm creamy oats topped with fresh banana and a drizzle of honey.",ing:[["Rolled oats","300 g"],["Whole milk","600 ml"],["Bananas","2"],["Honey","4 tsp"],["Pinch of salt","—"]],steps:["Combine oats, milk and salt in a saucepan. Cook on medium heat, stirring often, for 5 min until thick and creamy.","Divide into four bowls.","Slice bananas and arrange on top. Drizzle each bowl with 1 tsp honey."],tip:"Use milk instead of water for much creamier oats."},
+  "Chicken wraps (leftover stir-fry)":{tag:"Lunch · 5 min",time:"5 min",serves:"4",desc:"Speedy wraps using yesterday's stir-fry — zero waste lunch in 5 minutes.",ing:[["Tortilla wraps","4"],["Leftover stir-fry","~300 g"],["Sour cream or mayo","4 tbsp"],["Lettuce","handful"]],steps:["Warm tortillas in a dry pan or microwave for 20 sec.","Warm leftover stir-fry in a pan with a splash of water.","Spread sour cream on each wrap, add lettuce and stir-fry filling.","Roll tightly and serve."],tip:"Great cold too — pack for school or work lunchbox."},
+  "Spaghetti bolognese":{tag:"Dinner · 45 min",time:"45 min",serves:"4",desc:"Classic Italian beef ragù slow-simmered with tomatoes and herbs — a guaranteed family favourite.",ing:[["Spaghetti","400 g"],["Ground beef","400 g"],["Crushed tomatoes","400 g"],["Tomato paste","2 tbsp"],["Onion","1"],["Garlic cloves","3"],["Olive oil","2 tbsp"],["Dried oregano","1 tsp"],["Salt & pepper","to taste"],["Parmesan (optional)","to serve"]],steps:["Dice onion and mince garlic. Sauté in olive oil for 5 min until soft.","Add ground beef, break apart and brown well, ~8 min.","Add crushed tomatoes, tomato paste, oregano, salt and pepper. Stir well.","Simmer on low heat for 20 min, stirring occasionally.","Cook spaghetti in heavily salted boiling water until al dente. Drain.","Serve pasta topped with sauce and optional parmesan."],tip:"Make double the sauce and freeze half — a lifesaver for busy nights!"},
+  "Pancakes with jam":{tag:"Breakfast · 20 min",time:"20 min",serves:"4",desc:"Fluffy golden pancakes that kids love — simple, quick and always a hit.",ing:[["Plain flour","200 g"],["Eggs","2"],["Whole milk","300 ml"],["Butter","1 tbsp"],["Pinch of salt","—"],["Jam / fruit spread","to serve"]],steps:["Whisk flour, eggs, milk and salt into a smooth batter. Rest 5 min.","Melt a little butter in a non-stick pan over medium heat.","Pour small ladles of batter. Cook until bubbles form (~2 min), flip and cook 1 min more.","Serve warm with jam."],tip:"Don't skip the resting time — it makes the batter smoother and pancakes fluffier."},
+  "Pasta leftovers + side salad":{tag:"Lunch · 5 min",time:"5 min",serves:"4",desc:"Revived bolognese pasta with a fresh green salad — quick and satisfying.",ing:[["Leftover spaghetti bolognese","full portion"],["Lettuce / greens","1 bag"],["Tomatoes","2"],["Olive oil","drizzle"],["Salt & pepper","to taste"]],steps:["Reheat pasta in a pan over medium heat with 2–3 tbsp water to loosen the sauce.","Chop tomatoes and toss with greens, olive oil, salt and pepper.","Serve pasta with salad on the side."],tip:"A splash of water when reheating pasta revives the sauce perfectly."},
+  "Beef tacos with salsa & cheese":{tag:"Dinner · 30 min",time:"30 min",serves:"4",desc:"Fun hands-on dinner with bold Mexican flavours — let the kids build their own.",ing:[["Ground beef","400 g"],["Tortilla wraps","8"],["Onion","1"],["Garlic cloves","2"],["Cumin","1 tsp"],["Chili powder","½ tsp"],["Canned corn","1 can"],["Kidney beans","1 can"],["Cheddar cheese","100 g"],["Sour cream","200 g"],["Tomatoes","2"]],steps:["Dice onion and mince garlic. Sauté in oil 3–4 min.","Add ground beef, brown well, season with cumin, chili powder, salt and pepper.","Drain corn and beans, add to pan, heat through 3 min.","Dice tomatoes for fresh salsa. Grate cheese.","Warm tortillas. Set everything out and let everyone build their own tacos."],tip:"Kids always eat better when they're involved in building their own food!"},
+  "Yogurt with granola & fruit":{tag:"Breakfast · 5 min",time:"5 min",serves:"4",desc:"No-cook breakfast — fresh, filling and on the table in two minutes.",ing:[["Natural yogurt","500 g"],["Granola","200 g"],["Seasonal fruit","8 pieces"]],steps:["Divide yogurt between four bowls.","Top each with a generous handful of granola.","Slice fruit and arrange on top. Serve immediately."],tip:"Add the granola right before eating so it stays crunchy."},
+  "Veggie lentil soup + bread":{tag:"Lunch · 35 min",time:"35 min",serves:"4",desc:"Hearty, budget-friendly soup packed with plant protein and warming spices.",ing:[["Red lentils","300 g"],["Onion","1"],["Garlic cloves","3"],["Carrots","2"],["Veg stock","1 litre"],["Olive oil","1 tbsp"],["Cumin","1 tsp"],["Salt & pepper","to taste"],["Bread","to serve"]],steps:["Dice onion and carrots. Mince garlic. Sauté in olive oil 5 min.","Rinse lentils. Add to pot with stock and cumin.","Bring to boil then simmer 20 min until lentils are soft and falling apart.","Blend partially with a stick blender for a thicker texture. Season to taste.","Serve hot with crusty bread."],tip:"Red lentils dissolve easily — no soaking needed."},
+  "Baked chicken thighs + roast potatoes":{tag:"Dinner · 55 min",time:"55 min",serves:"4",desc:"One-tray dinner — crispy golden skin, tender juicy meat, fluffy roast potatoes.",ing:[["Chicken thighs (bone-in)","8 pcs"],["Potatoes","1 kg"],["Garlic cloves","4"],["Olive oil","3 tbsp"],["Paprika","1 tsp"],["Dried oregano","1 tsp"],["Salt & pepper","to taste"]],steps:["Preheat oven to 200°C. Chop potatoes into chunky wedges.","Toss potatoes with olive oil, salt and pepper. Spread on a large baking tray.","Rub chicken thighs with paprika, oregano, oil, salt and pepper. Place on top of potatoes.","Scatter whole garlic cloves around the tray.","Bake 45–50 min until chicken skin is golden and crispy and potatoes are soft inside."],tip:"Don't crowd the tray — spacing lets everything roast instead of steam."},
+  "French toast":{tag:"Breakfast · 15 min",time:"15 min",serves:"4",desc:"Golden crispy egg-soaked bread — a weekend breakfast the whole family loves.",ing:[["Bread slices","8"],["Eggs","3"],["Whole milk","4 tbsp"],["Butter","1 tbsp"],["Cinnamon","½ tsp"],["Honey or jam","to serve"]],steps:["Whisk eggs, milk and cinnamon in a shallow bowl.","Dip each bread slice in the egg mixture, coating both sides well.","Melt butter in a pan over medium heat. Fry slices 2–3 min each side until golden.","Serve with honey or jam."],tip:"Day-old bread works even better — it soaks up the egg without getting soggy."},
+  "Grilled cheese sandwiches + tomato soup":{tag:"Lunch · 20 min",time:"20 min",serves:"4",desc:"The ultimate comfort combo — melty golden cheese meets warming tomato soup.",ing:[["Bread slices","8"],["Cheddar cheese","150 g"],["Butter","2 tbsp"],["Crushed tomatoes","1 can"],["Onion","½"],["Stock","300 ml"],["Olive oil","1 tbsp"]],steps:["Make quick tomato soup: sauté half onion in oil, add tomatoes and stock, simmer 10 min, blend.","Grate cheese. Butter one side of each bread slice.","Place cheese between two slices (butter side facing out). Cook in pan over medium heat 2–3 min each side until golden and melted through.","Serve sandwiches with hot soup for dipping."],tip:"Press the sandwich gently with a spatula while cooking for a better, more even melt."},
+  "Homemade pizza":{tag:"Dinner · 30 min",time:"30 min",serves:"4",desc:"Fun Friday night pizza — everyone gets to top their own half.",ing:[["Store-bought pizza dough","2 packs"],["Pizza sauce / passata","200 ml"],["Cheddar or mozzarella","200 g"],["Bell peppers","1"],["Leftover veg (optional)","—"],["Dried oregano","1 tsp"]],steps:["Preheat oven to 220°C (as hot as it goes). Roll out dough on a floured surface.","Spread a thin layer of pizza sauce, leaving a border around the edge.","Grate cheese and scatter over the sauce. Add sliced peppers and any other toppings.","Sprinkle oregano. Bake 12–15 min until the base is crisp and cheese is bubbling."],tip:"The hotter the oven the better — preheating the baking tray gives a crispier base."},
+  "Full cooked breakfast":{tag:"Breakfast · 25 min",time:"25 min",serves:"4",desc:"A proper cooked breakfast to kick off the weekend — everyone's favourite.",ing:[["Eggs","6"],["Sausages","8 pcs"],["Bacon","150 g"],["Bread slices","4"],["Butter","1 tbsp"],["Salt & pepper","to taste"]],steps:["Grill or pan-fry sausages over medium heat, turning regularly, ~15 min until golden and cooked through.","Add bacon to the pan, cook 3–4 min each side until crispy.","Fry or scramble eggs in butter in a separate pan.","Toast bread. Plate everything together and serve hot."],tip:"Keep finished items warm in a low oven (100°C) while you cook the rest."},
+  "Leftovers / fridge clean-out":{tag:"Lunch · 5 min",time:"5 min",serves:"4",desc:"Use up everything in the fridge — a zero-waste, anything-goes Saturday lunch.",ing:[["Whatever is in the fridge","—"]],steps:["Check the fridge for leftover proteins, veg, sauces, bread or pasta.","Reheat and combine into wraps, bowls, sandwiches or a quick fried rice.","Season to taste and enjoy."],tip:"Saturday is the perfect day to clear out before the next weekly shop."},
+  "Beef & vegetable stew + rice":{tag:"Dinner · 75 min",time:"75 min",serves:"4",desc:"A slow-cooked hearty stew that fills the whole house with wonderful smells.",ing:[["Beef stew chunks","500 g"],["Carrots","3"],["Potatoes","400 g"],["Onion","1"],["Garlic cloves","3"],["Stock (beef or chicken)","600 ml"],["Tomato paste","1 tbsp"],["Olive oil","2 tbsp"],["White rice","300 g"]],steps:["Dice onion and mince garlic. Sauté in olive oil in a heavy pot for 5 min.","Add beef chunks, brown well on all sides, ~8 min.","Add chunked carrots, potatoes, tomato paste and stock. Stir well.","Bring to a boil, cover and simmer on low heat 50–60 min until beef is tender.","Cook rice separately. Serve stew over rice."],tip:"The longer it simmers, the more tender the beef — don't rush it!"},
+  "Banana pancakes":{tag:"Breakfast · 20 min",time:"20 min",serves:"4",desc:"Light naturally sweet pancakes — ripe bananas do all the work.",ing:[["Bananas","3 (ripe)"],["Eggs","4"],["Plain flour","100 g"],["Whole milk","200 ml"],["Butter","1 tbsp"],["Honey","to serve"]],steps:["Mash bananas well in a large bowl.","Whisk in eggs and milk, then fold in flour until a smooth batter forms.","Heat a little butter in a non-stick pan. Cook small pancakes 2 min each side until golden.","Serve with a drizzle of honey."],tip:"The riper the bananas, the sweeter and more flavourful the pancakes."},
+  "BLT sandwiches":{tag:"Lunch · 15 min",time:"15 min",serves:"4",desc:"A classic — crispy bacon, ripe tomato, crunchy lettuce, good bread.",ing:[["Bread slices","8"],["Bacon","150 g"],["Tomatoes","2"],["Lettuce","handful"],["Mayo","4 tbsp"],["Salt & pepper","to taste"]],steps:["Cook bacon in a pan until crispy, ~4 min each side.","Toast bread slices until golden.","Spread mayo on one side of each toast slice.","Layer bacon, sliced tomatoes and lettuce. Season with salt and pepper.","Top with second slice, press gently and serve."],tip:"Dry the lettuce leaves well — wet lettuce makes soggy sandwiches."},
+  "Roast chicken + mash & carrots":{tag:"Dinner · 90 min",time:"90 min",serves:"4",desc:"The perfect Sunday dinner — golden roast chicken with velvety mash and buttery carrots.",ing:[["Whole chicken","~1.5 kg"],["Potatoes","800 g"],["Carrots","4"],["Butter","50 g"],["Whole milk","100 ml"],["Garlic cloves","4"],["Olive oil","2 tbsp"],["Salt & pepper","to taste"]],steps:["Preheat oven to 190°C. Rub chicken with olive oil, salt and pepper. Place garlic cloves inside the cavity.","Roast chicken in a tray for 1 hour 20 min until juices run clear when thigh is pierced.","30 min before serving: peel and boil potatoes until soft (~20 min). Drain and mash with butter and milk. Season well.","Peel and slice carrots, boil 12 min until tender. Drain and toss with a little butter.","Rest chicken 10 min before carving. Serve with mash and carrots."],tip:"Let the chicken rest before carving — it keeps all the juices inside."},
+};
+
+const DAYS = [
+  {day:"Monday",meals:{breakfast:"Scrambled eggs & toast",lunch:"Tomato soup + bread",dinner:"Chicken & veg stir-fry + rice"}},
+  {day:"Tuesday",meals:{breakfast:"Oatmeal with banana & honey",lunch:"Chicken wraps (leftover stir-fry)",dinner:"Spaghetti bolognese"}},
+  {day:"Wednesday",meals:{breakfast:"Pancakes with jam",lunch:"Pasta leftovers + side salad",dinner:"Beef tacos with salsa & cheese"}},
+  {day:"Thursday",meals:{breakfast:"Yogurt with granola & fruit",lunch:"Veggie lentil soup + bread",dinner:"Baked chicken thighs + roast potatoes"}},
+  {day:"Friday",meals:{breakfast:"French toast",lunch:"Grilled cheese sandwiches + tomato soup",dinner:"Homemade pizza"}},
+  {day:"Saturday",meals:{breakfast:"Full cooked breakfast",lunch:"Leftovers / fridge clean-out",dinner:"Beef & vegetable stew + rice"}},
+  {day:"Sunday",meals:{breakfast:"Banana pancakes",lunch:"BLT sandwiches",dinner:"Roast chicken + mash & carrots"}},
+];
+
+const SHOP = [
+  {cat:"Meat & poultry",items:[
+    {n:"Whole chicken",q:"1 whole",u:"Sun – roast dinner"},
+    {n:"Chicken breast",q:"1 kg",u:"Mon – stir-fry"},
+    {n:"Chicken thighs (bone-in)",q:"8 pcs",u:"Thu – baked chicken"},
+    {n:"Ground beef",q:"800 g",u:"Tue bolognese · Wed tacos"},
+    {n:"Beef stew chunks",q:"500 g",u:"Sat – stew"},
+    {n:"Sausages",q:"8 pcs",u:"Sat breakfast"},
+    {n:"Bacon",q:"200 g",u:"Fri BLT · Sat breakfast"},
+  ]},
+  {cat:"Vegetables",items:[
+    {n:"Onions",q:"6 pcs",u:"Multiple dinners"},
+    {n:"Garlic",q:"2 bulbs",u:"Multiple dinners"},
+    {n:"Bell peppers (mixed)",q:"4 pcs",u:"Mon stir-fry · Wed tacos"},
+    {n:"Broccoli",q:"1 head",u:"Mon – stir-fry"},
+    {n:"Carrots",q:"8 pcs",u:"Mon · Sat stew · Sun dinner"},
+    {n:"Potatoes",q:"1.5 kg",u:"Thu & Sun dinner"},
+    {n:"Tomatoes",q:"4 pcs",u:"Wed tacos · Fri BLT"},
+    {n:"Lettuce / salad greens",q:"1 bag",u:"Wed lunch · Fri BLT"},
+    {n:"Cabbage",q:"½ head",u:"Sat stew"},
+  ]},
+  {cat:"Dairy & eggs",items:[
+    {n:"Eggs",q:"18 pcs",u:"Mon · Fri · Sat breakfast"},
+    {n:"Whole milk",q:"1 litre",u:"Breakfasts & pancakes"},
+    {n:"Butter",q:"200 g",u:"Cooking & breakfasts"},
+    {n:"Natural yogurt",q:"500 g",u:"Thu breakfast"},
+    {n:"Cheddar cheese",q:"200 g",u:"Fri grilled cheese & pizza"},
+    {n:"Parmesan",q:"100 g",u:"Tue bolognese"},
+    {n:"Sour cream",q:"200 g",u:"Wed tacos"},
+  ]},
+  {cat:"Bread & grains",items:[
+    {n:"Sliced bread",q:"2 loaves",u:"Mon–Fri breakfasts & lunches"},
+    {n:"Spaghetti",q:"400 g",u:"Tue bolognese"},
+    {n:"White rice",q:"1 kg",u:"Mon & Sat dinners"},
+    {n:"Rolled oats",q:"500 g",u:"Tue breakfast"},
+    {n:"Granola",q:"250 g",u:"Thu breakfast"},
+    {n:"Plain flour",q:"500 g",u:"Wed & Sat pancakes"},
+    {n:"Pizza dough (store-bought)",q:"2 packs",u:"Fri pizza"},
+    {n:"Tortilla wraps",q:"8 pcs",u:"Tue lunch · Wed tacos"},
+  ]},
+  {cat:"Pantry & canned",items:[
+    {n:"Crushed tomatoes",q:"2 cans",u:"Tue bolognese · Mon soup"},
+    {n:"Tomato paste",q:"1 tin",u:"Bolognese · soups · stew"},
+    {n:"Red lentils",q:"300 g",u:"Thu lentil soup"},
+    {n:"Stock (chicken or veg)",q:"1 litre",u:"Thu soup · Sat stew"},
+    {n:"Canned corn",q:"1 can",u:"Wed tacos"},
+    {n:"Kidney beans",q:"1 can",u:"Wed tacos"},
+    {n:"Pizza sauce / passata",q:"1 jar",u:"Fri pizza"},
+  ]},
+  {cat:"Condiments & spices",items:[
+    {n:"Olive oil",q:"1 bottle",u:"Multiple recipes"},
+    {n:"Vegetable oil",q:"1 bottle",u:"Stir-fry & frying"},
+    {n:"Soy sauce",q:"1 bottle",u:"Mon stir-fry"},
+    {n:"Corn starch",q:"1 pack",u:"Mon stir-fry"},
+    {n:"Dried oregano",q:"1 jar",u:"Bolognese & pizza"},
+    {n:"Cumin & chili powder",q:"1 each",u:"Wed tacos"},
+    {n:"Paprika",q:"1 jar",u:"Thu baked chicken"},
+    {n:"Honey",q:"1 jar",u:"Tue oatmeal · Sun pancakes"},
+    {n:"Jam / fruit spread",q:"1 jar",u:"Wed pancakes"},
+    {n:"Salt & black pepper",q:"as needed",u:"All recipes"},
+  ]},
+  {cat:"Fruit",items:[
+    {n:"Bananas",q:"6 pcs",u:"Tue oatmeal · Sun pancakes"},
+    {n:"Seasonal fruit",q:"8 pcs",u:"Thu breakfast with yogurt"},
+  ]},
+];
+
+let curTab = 'menu';
+let openDays = {0: true};
+let checked = {};
+let shopFilter = 'All';
+
+function switchTab(t) {
+  curTab = t;
+  document.getElementById('tb-menu').className = 'tb' + (t==='menu'?' on':'');
+  document.getElementById('tb-shop').className = 'tb' + (t==='shop'?' on':'');
+  document.getElementById('pane-menu').style.display = t==='menu' ? 'block' : 'none';
+  document.getElementById('pane-shop').style.display = t==='shop' ? 'block' : 'none';
+  document.getElementById('hdr-title').textContent = t==='menu' ? 'This week' : 'Shopping list';
+  document.getElementById('nav-home').className = 'nav-item' + (t==='menu'?' on':'');
+  document.getElementById('nav-shop').className = 'nav-item' + (t==='shop'?' on':'');
+  if(t==='shop') buildShop();
+}
+
+function navTo(t) {
+  closeRecipe();
+  switchTab(t);
+}
+
+function toggleDay(i) {
+  openDays[i] = !openDays[i];
+  const body = document.getElementById('dcb'+i);
+  const chev = document.getElementById('dcc'+i);
+  body.className = 'dc-body' + (openDays[i] ? ' open' : '');
+  chev.style.transform = openDays[i] ? 'rotate(180deg)' : '';
+}
+
+function openRecipe(name, day) {
+  const r = RECIPES[name];
+  if (!r) return;
+  document.getElementById('rv-back-lbl').textContent = day || 'Back';
+  const html = `
+    <span class="rv-tag">${r.tag}</span>
+    <div class="rv-title">${name}</div>
+    <div class="rv-meta">
+      <div class="rv-meta-chip">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5v4l2.5 1.5"/></svg>
+        ${r.time}
+      </div>
+      <div class="rv-meta-chip">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2C5.5 2 3.5 4 3.5 6.5c0 3.5 4.5 7.5 4.5 7.5s4.5-4 4.5-7.5C12.5 4 10.5 2 8 2z"/><circle cx="8" cy="6.5" r="1.5"/></svg>
+        ${r.serves} servings
+      </div>
+    </div>
+    <p class="rv-desc">${r.desc}</p>
+    <div class="sec-head">Ingredients</div>
+    <div class="ing-list">
+      ${r.ing.map(([n,q]) => `<div class="ing-row"><span class="ing-name">${n}</span><span class="ing-qty">${q}</span></div>`).join('')}
+    </div>
+    <div class="sec-head">Method</div>
+    ${r.steps.map((s,i) => `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('')}
+    ${r.tip ? `<div class="sec-head">Tip</div><div class="tip-box"><p>${r.tip}</p></div>` : ''}
+    <div class="spacer"></div>
+  `;
+  document.getElementById('rv-content').innerHTML = html;
+  document.getElementById('rv-content').parentElement.scrollTop = 0;
+  document.getElementById('view-main').classList.remove('active');
+  document.getElementById('view-recipe').classList.add('active');
+}
+
+function closeRecipe() {
+  document.getElementById('view-recipe').classList.remove('active');
+  document.getElementById('view-main').classList.add('active');
+}
+
+function buildMenu() {
+  const dots = {breakfast:'dot-b', lunch:'dot-l', dinner:'dot-d'};
+  document.getElementById('pane-menu').innerHTML = DAYS.map((d,i) => `
+    <div class="day-card">
+      <div class="dc-head" onclick="toggleDay(${i})">
+        <div style="flex:1;min-width:0">
+          <div class="dc-day">${d.day}</div>
+          <div class="dc-sub">${d.meals.breakfast} · ${d.meals.dinner}</div>
+        </div>
+        <svg id="dcc${i}" class="chev" style="transform:${openDays[i]?'rotate(180deg)':''}" viewBox="0 0 18 18">
+          <path d="M4.5 7L9 11.5 13.5 7"/>
+        </svg>
+      </div>
+      <div class="dc-body${openDays[i]?' open':''}" id="dcb${i}">
+        ${['breakfast','lunch','dinner'].map(m => `
+          <div class="meal-row" onclick="openRecipe('${d.meals[m].replace(/'/g,"\\'")}','${d.day}')">
+            <div class="meal-dot ${dots[m]}"></div>
+            <div class="meal-info">
+              <div class="meal-label">${m}</div>
+              <div class="meal-name">${d.meals[m]}</div>
+            </div>
+            <span class="meal-arr">›</span>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function buildShop() {
+  const allItems = SHOP.flatMap(c => c.items);
+  const total = allItems.length;
+  const done = Object.values(checked).filter(Boolean).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  const cats = ['All', ...SHOP.map(c => c.cat)];
+  const filtersHtml = cats.map(c =>
+    `<button class="flt${c===shopFilter?' on':''}" onclick="setFilter('${c.replace(/'/g,"\\'")}')">${c}</button>`
+  ).join('');
+
+  const visible = SHOP.filter(c => shopFilter==='All' || c.cat===shopFilter);
+  const listHtml = visible.map(cat => `
+    <div class="cat-hd">${cat.cat}</div>
+    ${cat.items.map(it => {
+      const id = it.n;
+      const on = !!checked[id];
+      return `<div class="si${on?' done':''}" onclick="toggleItem('${id.replace(/'/g,"\\'")}')" role="button">
+        <div class="si-check">
+          <svg class="si-tick" viewBox="0 0 13 13" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="2,6.5 5.5,10 11,3"/>
+          </svg>
+        </div>
+        <div class="si-info">
+          <div class="si-name">${it.n}</div>
+          <div class="si-qty">${it.q}</div>
+          <div class="si-use">${it.u}</div>
+        </div>
+      </div>`;
+    }).join('')}`).join('');
+
+  document.getElementById('pane-shop').innerHTML = `
+    <div class="shop-top">
+      <div class="prog-wrap">
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>
+        <div class="prog-txt">${done} of ${total} items collected</div>
+      </div>
+      <button class="rst-btn" onclick="resetShop()">Reset</button>
+    </div>
+    <div class="filters">${filtersHtml}</div>
+    ${listHtml}
+    <div class="spacer"></div>
+  `;
+}
+
+function setFilter(f) { shopFilter = f; buildShop(); }
+function toggleItem(id) { checked[id] = !checked[id]; buildShop(); }
+function resetShop() { checked = {}; buildShop(); }
+
+buildMenu();
+</script>
+</body>
+</html>
